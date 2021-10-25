@@ -1,0 +1,64 @@
+CASE #step OF
+    0:
+        RESET_TIMER(#Sent_kleine_banden_Instance);
+        RESET_TIMER(#Timoute_kleine_banden_Instance);
+        #rts := FALSE;
+        IF #rtsVorige THEN
+            #step := 1;
+        END_IF;
+        
+    1:
+        //"B04" := TRUE;
+        #rtr := TRUE;
+        #Timoute_kleine_banden_Instance.TON(IN := #BandMotor,
+                                            PT := T#10s,
+                                            Q => #timedOut);
+        IF #lichtsensor THEN
+            #rtr := FALSE;
+            #step := 2;
+        END_IF;
+        IF #timedOut THEN
+            #timedOut := FALSE;
+            #step := 3;
+            ;
+        END_IF;
+        
+    2:
+        //"B04" := FALSE;
+        
+        #rts := TRUE;
+        #step := 4;
+        
+    3:
+        //RESET_TIMER("Band04_timeout_DB");
+        //RESET_TIMER("B04_send_DB");
+        //"B04" := FALSE;
+        
+        #step := 0;
+    4:
+        IF #rtrVolgende THEN
+            //"B04" := TRUE;
+            #step := 5;
+        END_IF;
+        
+    5:
+        #Sent_kleine_banden_Instance.TON(IN := #BandMotor,
+                                            PT := T#700ms,
+                                            Q => #Sent);
+        
+        IF #Sent THEN
+            #step := 0;
+            ;
+        END_IF;
+        
+        IF (NOT #lichtsensor OR #Sent) AND #rtsVorige THEN
+            //"B04" := FALSE;
+            //RESET_TIMER("Band04_timeout_DB");
+            //RESET_TIMER("B04_send_DB");
+            #step := 0;
+            ;
+        END_IF;
+        
+    ELSE  // Statement section ELSE
+        ;
+END_CASE;
